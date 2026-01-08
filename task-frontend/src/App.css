@@ -1,0 +1,139 @@
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f4f7f6;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.header h1 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 30px;
+}
+
+
+.tabs {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tab {
+  padding: 8px 16px;
+  border: none;
+  background: #e9ecef;
+  cursor: pointer;
+  border-radius: 20px;
+  transition: all 0.3s;
+}
+
+.tab.active {
+  background: #007bff;
+  color: white;
+  font-weight: bold;
+}
+
+
+.task-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+
+.task-form input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  min-width: 200px;
+}
+
+.task-form button {
+  padding: 10px 20px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.task-form button:hover {
+  background: #218838;
+}
+
+/* Task Cards */
+.task-card {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: transform 0.2s;
+}
+
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.task-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: color 0.2s;
+}
+
+.delete-btn:hover {
+  color: #dc3545;
+}
+
+.task-desc {
+  color: #666;
+  margin-bottom: 15px;
+  font-size: 0.95rem;
+}
+
+.task-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.status-select {
+  padding: 4px 8px;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .container { margin: 10px; padding: 15px; }
+  .task-form { flex-direction: column; }
+  .task-form input, .task-form button { width: 100%; }
+}
