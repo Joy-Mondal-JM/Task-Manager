@@ -3,8 +3,16 @@ import axios from 'axios';
 import io from 'socket.io-client';
 import './App.css';
 
-const socket = io('http://localhost:5000');
-const API_URL = 'http://localhost:5000/api/tasks';
+// ✅ BACKEND URL (Render)
+const BACKEND_URL = 'https://joy-task-manager-backend.onrender.com';
+
+// ✅ Socket.IO connection (production-safe)
+const socket = io(BACKEND_URL, {
+  transports: ['websocket']
+});
+
+// ✅ API base URL
+const API_URL = `${BACKEND_URL}/api/tasks`;
 
 function App() {
   const [tasks, setTasks] = useState([]);
@@ -12,16 +20,30 @@ function App() {
   const [newTaskDesc, setNewTaskDesc] = useState('');
   const [filter, setFilter] = useState('all');
 
-
   useEffect(() => {
     fetchTasks();
   }, [filter]);
 
   useEffect(() => {
-    socket.on('task_created', (task) => setTasks((prev) => [task, ...prev]));
-    socket.on('task_updated', (uTask) => setTasks((prev) => prev.map(t => t.id === uTask.id ? uTask : t)));
-    socket.on('task_deleted', (id) => setTasks((prev) => prev.filter(t => t.id !== parseInt(id))));
-    return () => { socket.off('task_created'); socket.off('task_updated'); socket.off('task_deleted'); };
+    socket.on('task_created', (task) =>
+      setTasks((prev) => [task, ...prev])
+    );
+
+    socket.on('task_updated', (uTask) =>
+      setTasks((prev) =>
+        prev.map((t) => (t.id === uTask.id ? uTask : t))
+      )
+    );
+
+    socket.on('task_deleted', (id) =>
+      setTasks((prev) => prev.filter((t) => t.id !== parseInt(id)))
+    );
+
+    return () => {
+      socket.off('task_created');
+      socket.off('task_updated');
+      socket.off('task_deleted');
+    };
   }, []);
 
   const fetchTasks = async () => {
@@ -29,36 +51,52 @@ function App() {
     try {
       const res = await axios.get(`${API_URL}${query}`);
       setTasks(res.data);
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!newTaskTitle) return;
+
     try {
-      await axios.post(API_URL, { title: newTaskTitle, description: newTaskDesc });
+      await axios.post(API_URL, {
+        title: newTaskTitle,
+        description: newTaskDesc
+      });
       setNewTaskTitle('');
       setNewTaskDesc('');
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleStatusChange = async (id, newStatus) => {
-    try { await axios.patch(`${API_URL}/${id}`, { status: newStatus }); } 
-    catch (err) { console.error(err); }
+    try {
+      await axios.patch(`${API_URL}/${id}`, { status: newStatus });
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleDelete = async (id) => {
-    if(!window.confirm("Delete this task?")) return;
-    try { await axios.delete(`${API_URL}/${id}`); } 
-    catch (err) { console.error(err); }
+    if (!window.confirm('Delete this task?')) return;
+    try {
+      await axios.delete(`${API_URL}/${id}`);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-
   const getStatusColor = (status) => {
-    switch(status) {
-      case 'completed': return '#d4edda'; 
-      case 'in-progress': return '#fff3cd'; 
-      default: return '#e2e3e5'; 
+    switch (status) {
+      case 'completed':
+        return '#d4edda';
+      case 'in-progress':
+        return '#fff3cd';
+      default:
+        return '#e2e3e5';
     }
   };
 
@@ -68,11 +106,11 @@ function App() {
         <h1>Task Manager</h1>
       </header>
 
-      {}
+      {/* Filter Tabs */}
       <div className="tabs">
-        {['all', 'pending', 'in-progress', 'completed'].map(status => (
-          <button 
-            key={status} 
+        {['all', 'pending', 'in-progress', 'completed'].map((status) => (
+          <button
+            key={status}
             className={`tab ${filter === status ? 'active' : ''}`}
             onClick={() => setFilter(status)}
           >
@@ -81,45 +119,59 @@ function App() {
         ))}
       </div>
 
-      {}
+      {/* Create Task */}
       <form onSubmit={handleCreate} className="task-form">
-        <input 
-          type="text" 
-          value={newTaskTitle} 
-          onChange={(e) => setNewTaskTitle(e.target.value)} 
-          placeholder="Task Title" 
-          required 
+        <input
+          type="text"
+          value={newTaskTitle}
+          onChange={(e) => setNewTaskTitle(e.target.value)}
+          placeholder="Task Title"
+          required
         />
-        <input 
-          type="text" 
-          value={newTaskDesc} 
-          onChange={(e) => setNewTaskDesc(e.target.value)} 
-          placeholder="Description (Optional)" 
+        <input
+          type="text"
+          value={newTaskDesc}
+          onChange={(e) => setNewTaskDesc(e.target.value)}
+          placeholder="Description (Optional)"
         />
         <button type="submit">Create Task</button>
       </form>
 
-      {}
+      {/* Task List */}
       <div className="task-list">
-        {tasks.map(task => (
-          <div key={task.id} className="task-card" style={{ borderLeft: `5px solid ${getStatusColor(task.status)}` }}>
+        {tasks.map((task) => (
+          <div
+            key={task.id}
+            className="task-card"
+            style={{ borderLeft: `5px solid ${getStatusColor(task.status)}` }}
+          >
             <div className="task-header">
               <h3>{task.title}</h3>
-              {}
-              <button onClick={() => handleDelete(task.id)} className="delete-btn" title="Delete">🗑️</button>
+              <button
+                onClick={() => handleDelete(task.id)}
+                className="delete-btn"
+                title="Delete"
+              >
+                🗑️
+              </button>
             </div>
-            
+
             <p className="task-desc">{task.description}</p>
-            
+
             <div className="task-footer">
-              <span className="date">Created: {new Date(task.created_at).toLocaleDateString()}</span>
-              
-              {}
-              <select 
-                value={task.status} 
-                onChange={(e) => handleStatusChange(task.id, e.target.value)}
+              <span className="date">
+                Created: {new Date(task.created_at).toLocaleDateString()}
+              </span>
+
+              <select
+                value={task.status}
+                onChange={(e) =>
+                  handleStatusChange(task.id, e.target.value)
+                }
                 className="status-select"
-                style={{ backgroundColor: getStatusColor(task.status) }}
+                style={{
+                  backgroundColor: getStatusColor(task.status)
+                }}
               >
                 <option value="pending">Pending</option>
                 <option value="in-progress">In Progress</option>
@@ -128,7 +180,10 @@ function App() {
             </div>
           </div>
         ))}
-        {tasks.length === 0 && <p className="empty-state">No tasks found.</p>}
+
+        {tasks.length === 0 && (
+          <p className="empty-state">No tasks found.</p>
+        )}
       </div>
     </div>
   );
