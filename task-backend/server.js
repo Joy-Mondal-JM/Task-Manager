@@ -9,16 +9,24 @@ const app = express();
 const server = http.createServer(app);
 
 // Enable CORS for frontend connection
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "*"
+}));
+
 app.use(express.json());
 
+// Socket.IO setup
 const io = new Server(server, {
-  cors: { origin: "http://localhost:3000", methods: ["GET", "POST"] }
+  cors: {
+    origin: process.env.FRONTEND_URL || "*",
+    methods: ["GET", "POST", "PATCH", "DELETE"]
+  }
 });
 
-// Postgres Connection
+// Postgres Connection (Render requires SSL)
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
 });
 
 // --- REST Endpoints ---
@@ -29,12 +37,12 @@ app.get('/api/tasks', async (req, res) => {
     const { status } = req.query;
     let query = 'SELECT * FROM tasks ORDER BY created_at DESC';
     let params = [];
-    
+
     if (status) {
       query = 'SELECT * FROM tasks WHERE status = $1 ORDER BY created_at DESC';
       params = [status];
     }
-    
+
     const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
@@ -53,11 +61,12 @@ app.post('/api/tasks', async (req, res) => {
       'INSERT INTO tasks (title, description) VALUES ($1, $2) RETURNING *',
       [title, description]
     );
+
     const newTask = result.rows[0];
 
     // Real-time: Notify all clients
     io.emit('task_created', newTask);
-    
+
     res.status(201).json(newTask);
   } catch (err) {
     console.error(err);
@@ -76,9 +85,12 @@ app.patch('/api/tasks/:id', async (req, res) => {
       [status, id]
     );
 
-    if (result.rows.length === 0) return res.status(404).json({ error: "Task not found" });
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
     const updatedTask = result.rows[0];
-    
+
     // Real-time: Notify all clients
     io.emit('task_updated', updatedTask);
 
@@ -92,10 +104,16 @@ app.patch('/api/tasks/:id', async (req, res) => {
 // DELETE /api/tasks/:id
 app.delete('/api/tasks/:id', async (req, res) => {
   const { id } = req.params;
+
   try {
-    const result = await pool.query('DELETE FROM tasks WHERE id = $1 RETURNING id', [id]);
-    
-    if (result.rows.length === 0) return res.status(404).json({ error: "Task not found" });
+    const result = await pool.query(
+      'DELETE FROM tasks WHERE id = $1 RETURNING id',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Task not found" });
+    }
 
     // Real-time: Notify all clients
     io.emit('task_deleted', id);
@@ -105,6 +123,11 @@ app.delete('/api/tasks/:id', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Database error" });
   }
+});
+
+// ✅ Health Check Route (IMPORTANT)
+app.get("/", (req, res) => {
+  res.send("Backend is running 🚀");
 });
 
 // Start Server
